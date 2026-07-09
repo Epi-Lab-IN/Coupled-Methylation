@@ -9,39 +9,40 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 library(scales)
+library(stringr)
 
 # -------------------------
 # 1. Read data for each species and add species labels
 # -------------------------
 platypus_df <- read_delim(
-  "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Playtopus/Playtopus_CoM_Windows",
+  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_ornitorrinco.txt",
   delim = "\t"
 ) %>%
-  mutate(species = "Platypus")
+  mutate(species = "Platypus",  chr = as.character(chr))
 
 chicken_df <- read_delim(
-  "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Chicken/Chicken_CoM_Windows",
+  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_pollo.txt",
   delim = "\t"
 ) %>%
-  mutate(species = "Chicken")
+  mutate(species = "Chicken", chr = as.character(chr))
 
 frog_df <- read_delim(
-  "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Frog/Frog_CoM_Windows",
+  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_rana.txt",
   delim = "\t"
 ) %>%
-  mutate(species = "Frog")
+  mutate(species = "Frog", chr = as.character(chr))
 
 zebrafish_df <- read_delim(
-  "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Zebrafish/Zebrafish_CoM_Windows",
+  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_zebrafish.txt",
   delim = "\t"
 ) %>%
-  mutate(species = "Zebrafish")
+  mutate(species = "Zebrafish", chr = as.character(chr))
 
 shark_df <- read_delim(
-  "/home/epi-lab/Escritorio/Paper_scripts/Figure2/tiburon",
+  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_tiburon.txt",
   delim = "\t"
 ) %>%
-  mutate(species = "Elephant shark")
+  mutate(species = "Elephant shark", chr = as.character(chr))
 
 # -------------------------
 # 2. Combine all species into one dataframe
@@ -53,7 +54,7 @@ df_all_species <- bind_rows(platypus_df, chicken_df, frog_df, zebrafish_df, shar
 # -------------------------
 df_filtered <- df_all_species %>%
   group_by(species) %>%
-  filter(CA_bvalues > quantile(CA_bvalues, 0.75, na.rm = TRUE)) %>%
+  filter(CA_bvalues > quantile(CA_bvalues, 0.66, na.rm = TRUE)) %>%
   ungroup()
 
 # -------------------------
@@ -113,8 +114,7 @@ ggplot(df_counts, aes(x = CG_bin_center, y = n_events_norm, color = species)) +
   labs(
     x = "mCG (β-value)",
     y = "Number of mCA windows (×10⁵)",
-    color = "Species",
-    title = "CA methylation enrichment across CG methylation bins in vertebrates"
+    color = "Species"
   ) +
   theme_classic(base_size = 18) +
   theme(
@@ -128,5 +128,4 @@ ggplot(df_counts, aes(x = CG_bin_center, y = n_events_norm, color = species)) +
     axis.line = element_line(size = 1),
     legend.text = element_text(size = 16),
     legend.title = element_text(size = 18)
-  ) +
-  ylim(0, 8)
+  ) 

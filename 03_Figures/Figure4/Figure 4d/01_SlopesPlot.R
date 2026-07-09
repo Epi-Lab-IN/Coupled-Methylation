@@ -4,7 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(scales)
 # --- Stscales# --- Step 0: Read data file  ---
-df <-read_delim("~/Escritorio/Paper_scripts/Figure2/Chimpance/slopes.txt", 
+df <-read_delim("~/Escritorio/Paper_scripts/Figure2/Figura2d/Data/slopes.txt", 
                                 delim = "\t", escape_double = FALSE, 
                               trim_ws = TRUE)
 

@@ -42,7 +42,7 @@ controles[] <- lapply(controles, function(x) {
 # ================================================================
 # 2. HEATMAP FUNCTION
 # ================================================================
-plot_rna_heatmap <- function(target_genes, data_df, high_color = "#ab8f02") {
+plot_rna_heatmap <- function(target_genes, data_df, high_color) {
   
   # --- Safety Check: Ensure target genes exist in the dataframe ---
   valid_genes <- intersect(target_genes, colnames(data_df))

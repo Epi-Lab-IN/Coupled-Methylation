@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
 })
 
 # Define input file paths (Update when publishing)
-PATH_WINDOWS <- "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Figura2c/Data/Chicken/Chicken_CoM_Windows"
+PATH_WINDOWS <- "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_pollo.txt"
 
 # --- 1. Load and Map Genomic Data ---
 sample_data <- read_delim(PATH_WINDOWS, delim = "\t", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)

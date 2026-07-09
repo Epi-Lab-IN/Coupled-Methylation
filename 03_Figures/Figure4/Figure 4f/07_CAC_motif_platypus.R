@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
 bsgenome_platypus <- BSgenome.Oanatinus.NCBI.mOrnAna1.pri.v4
 
 # Define input file paths 
-PATH_WINDOWS <- "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Figura2c/Data/Playtopus/Playtopus_CoM_Windows"
+PATH_WINDOWS <- "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_ornitorrinco.txt"
 
 # --- 1. Load Data and Format Chromosomes ---
 sample_data <- read_delim(PATH_WINDOWS, delim = "\t", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)

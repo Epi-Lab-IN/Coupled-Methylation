@@ -6,11 +6,11 @@ suppressPackageStartupMessages({
 })
 
 # Define input file paths 
-PATH_WINDOWS_DIR <- "Escritorio/Paper_scripts/Figure1/Figura1a/Data/"
+PATH_WINDOWS_DIR <- "Escritorio/Resultados/CHH/"
 PATH_CHIP_SEQ <- "Escritorio/chip-seq/H3K27me3_human.bed"
 PATH_CHROM_SIZES <- "/home/epi-lab/Escritorio/Database/hg38.chrom.sizes"
 
-files <- paste0(PATH_WINDOWS_DIR, "M", 1:7, "_CoM_Windows")
+files <- paste0(PATH_WINDOWS_DIR, c(35, 43, 55, 67, 78, 85, 103), "y_cowindows.txt")
 
 # --- 1. Load Data and Extract Consensus Regions ---
 # Function to load samples, calculate Q3 threshold, and filter

@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
 bsgenome_zebrafish <- BSgenome.Drerio.NCBI.GRCz12tu
 
 # Define input file paths 
-PATH_WINDOWS <- "~/Escritorio/Paper_scripts/Figure2/Figura2c/Data/Zebrafish/Zebrafish_CoM_Windows"
+PATH_WINDOWS <- "~/Escritorio/Animals/CHH/animals/cowindows_zebrafish.txt"
 PATH_MAPPING <- "~/Escritorio/Animals/Genomes/Assembly_zebra.txt"
 
 # --- 1. Load Data and Format Chromosomes ---

@@ -17,12 +17,12 @@ library(ggplot2)
 # -------------------------
 # Load genomic regions close to CoM+ (positive slope) elements
 com_pos_regions <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/cluster/genbody_COM_pos_close10k",
+  "/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_pos_close10k.txt",
   delim = "\t",
   escape_double = FALSE,
   trim_ws = TRUE
 )
-
+com_pos_regions$chr <- gsub("chr", "", com_pos_regions$chr)
 # -------------------------
 # 2. Retrieve Ensembl gene annotations
 # -------------------------
@@ -62,7 +62,7 @@ overlapping_genes <- cbind(
 # 4. Load CA methylation windows
 # -------------------------
 ca_windows <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/ventanas_ca_comun_cov5_bvalues",
+  "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_bvalues.tsv",
   delim = "\t",
   escape_double = FALSE,
   trim_ws = TRUE
@@ -202,19 +202,19 @@ library(tidyr)
 library(ggplot2)
 
 # -------------------------
-# 1. Load CoM+ regions
+# 1. Load CoM- regions
 # -------------------------
 # Load genomic regions close to CoM+ (positive slope) elements
 com_neg_regions <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/cluster/genbody_COM_neg_close10k",
+  "/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_neg_close10k.txt",
   delim = "\t",
   escape_double = FALSE,
   trim_ws = TRUE
 )
 
-
+com_neg_regions$chr <- gsub("chr", "", com_neg_regions$chr)
 # -------------------------
-# 3. Find overlaps between CoM+ regions and genes
+# 3. Find overlaps between CoM- regions and genes
 # -------------------------
 # Convert input to GRanges and find overlaps
 overlap_hits <- findOverlaps(as(com_neg_regions, "GRanges"), genes_GR)
@@ -226,16 +226,16 @@ overlapping_genes <- cbind(
 )
 
 # -------------------------
-# 4. Load CA methylation windows
+# 4. Load CGmethylation windows
 # -------------------------
 cg_windows <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/ventanas_cg_comun_cov5_bvalues",
+  "/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/EMseq_cg_comunes_bvalues.tsv",
   delim = "\t",
   escape_double = FALSE,
   trim_ws = TRUE
 )
 
-# Rename CA methylation columns (one per age)
+# Rename CG methylation columns (one per age)
 colnames(cg_windows)[4:10] <- c(
   "y35_cg", "y45_cg", "y55_cg", "y65_cg",
   "y75_cg", "y85_cg", "y103_cg"

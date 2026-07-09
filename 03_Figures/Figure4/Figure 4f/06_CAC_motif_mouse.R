@@ -10,9 +10,11 @@ suppressPackageStartupMessages({
 bsgenome_mouse <- BSgenome.Mmusculus.UCSC.mm10
 
 # Define input file paths 
-PATH_WINDOWS_DIR <- "/home/epi-lab/Escritorio/Paper_scripts/Figure2/Figura2b/Data/"
+PATH_WINDOWS_DIR <- "Escritorio/Animals/CHH/Mouse/"
 PATH_CHROM_SIZES <- "/home/epi-lab/Escritorio/Database/mm10.chrom.sizes"
-files <- paste0(PATH_WINDOWS_DIR, "M1_", c(6, 10, 24, 72), "w_mouse_CoM_Windows")
+
+files <- paste0(PATH_WINDOWS_DIR, "cowindows_", c("6w", "10w", "JC", "VC"), ".txt")
+
 
 # --- 1. Load Data and Extract Consensus Regions ---
 extract_consensus_regions <- function(file_list, type = c("pos", "neg")) {

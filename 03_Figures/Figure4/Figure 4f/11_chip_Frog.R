@@ -6,10 +6,10 @@ suppressPackageStartupMessages({
 })
 
 # Define input file paths 
-PATH_WINDOWS <- "Escritorio/Paper_scripts/Figure2/Frog/Frog_CoM_Windows"
-PATH_CHIP_SEQ <- "Escritorio/chip/H3K27me3_rana_peaks.bed"
-PATH_MAPPING <- "~/Escritorio/Genomes/Assembly_frog.txt"
-PATH_CHROM_SIZES <- "/home/epi-lab/Escritorio/Genomes/rana_genome.chrom.sizes"
+PATH_WINDOWS <- "Escritorio/Animals/CHH/animals/cowindows_rana.txt"
+PATH_CHIP_SEQ <- "Escritorio/chip-seq/H3K27me3_rana_peaks.bed"
+PATH_MAPPING <- "~/Escritorio/Animals/Genomes/Assembly_frog.txt"
+PATH_CHROM_SIZES <- "/home/epi-lab/Escritorio/Animals/Genomes/rana_genome.chrom.sizes"
 
 # --- 1. Load Data and Extract Target Regions ---
 frog_data <- read_delim(PATH_WINDOWS, delim = "\t", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)
@@ -51,14 +51,17 @@ observed_hits <- sum(countOverlaps(frog_GR, chip_GR) > 0)
 # Note: Ensure your .chrom.sizes file actually has a header, as you specified header=TRUE
 chromsizes <- read.table(PATH_CHROM_SIZES, header = TRUE)
 colnames(chromsizes) <- c("chr", "size")
-
+chromsizes <- chromsizes %>%
+  left_join(dicc, by = c("chr" = "refseq")) %>%
+  mutate(chr = scaffold) %>%
+  dplyr::select(-scaffold) %>%
+  filter(!is.na(chr))
 set.seed(42)
 n_random <- length(frog_GR)
 
 # Sample chromosomes proportionally to their true genomic size
 random_chrs <- sample(chromsizes$chr, n_random, replace = TRUE, 
                       prob = chromsizes$size / sum(chromsizes$size))
-
 # Memory-efficient random start generation ensuring 100bp window boundaries
 random_starts <- sapply(random_chrs, function(c) {
   max_start <- chromsizes$size[chromsizes$chr == c] - 100

@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
 bsgenome_chimp <- BSgenome.Ptroglodytes.NCBI.NHGRImPanTro3v2.0pri
 
 # --- 1. Load Data and Extract Consensus Regions ---
-files <- paste0("~/Escritorio/Paper_scripts/Figure2/Figura2a/data/M", 1:6, "_chimpace_CoM_Windows")
+files <- paste0("~/Escritorio/Animals/CHH/chimpance/cowindows_", c(35,40,43,44,45,57), "y.txt")
 
 # Unified function to handle both positive (Q3) and negative (Q1) cohorts
 extract_consensus_regions <- function(file_list, type = c("pos", "neg")) {

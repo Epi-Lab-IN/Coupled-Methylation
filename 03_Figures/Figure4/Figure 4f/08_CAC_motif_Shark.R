@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
 bsgenome_shark <- BSgenome.Cmilii.NCBI.IMCBCmil1.0
 
 # Define input file paths 
-PATH_WINDOWS <- "Escritorio/Paper_scripts/Figure2/Figura2c/Data/Shark/tiburon"
+PATH_WINDOWS <- "Escritorio/Animals/CHH/animals/cowindows_tiburon.txt"
 PATH_MAPPING <- "~/Escritorio/Animals/Genomes/Assembly_shark.txt"
 
 # --- 1. Load Data and Format Chromosomes ---

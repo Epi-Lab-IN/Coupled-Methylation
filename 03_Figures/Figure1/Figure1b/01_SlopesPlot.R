@@ -4,7 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(scales)
 # --- Step 0: Read data file  ---
-df <-read_delim("~/Escritorio/Paper_scripts/Figure1/Figura1b/Emseqslopes.txt", 
+df <-read_delim("~/Escritorio/Paper_scripts/Figure1/Figura1b/Data/Emseqslopes.txt", 
                                 delim = "\t", escape_double = FALSE, 
                               trim_ws = TRUE)
 
@@ -35,7 +35,7 @@ normalized_df <- expanded_df %>%
 
 # --- Step 3: Extract normalized y values for the "2y" sample ---
 df_2y <- normalized_df %>%
-  filter(Sample == "35y") %>%
+  filter(Sample == "35") %>%
   dplyr::select(x, y_2y = y_norm)
 
 # --- Step 4: Relativize all samples to "2y" sample at each x ---
@@ -102,7 +102,4 @@ ggplot(plot_df, aes(x = Position, y = Fraction, group = Sample, color = Age)) +
     legend.title = element_text(size = 19),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
-  ) +
-  
-  # Fixed aspect ratio
-  coord_fixed(ratio = 20)
+  ) 

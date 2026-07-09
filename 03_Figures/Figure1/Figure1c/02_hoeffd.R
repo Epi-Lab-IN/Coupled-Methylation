@@ -41,7 +41,7 @@ compute_hoeffding <- function(subset_matrix, ages) {
 
 # Function to extract age values from column names
 extract_ages <- function(col_names) {
-  as.numeric(gsub("y([0-9]+).*", "\\1", col_names))
+  as.numeric(sub(".*?(\\d+)y$", "\\1", col_names))
 }
 
 # Function to perform Hoeffding tests for high/intermediate/low subsets
@@ -67,11 +67,6 @@ analyze_correlation <- function(data, cg_cols, ca_cols, threshold_type = "cg") {
     bot <- quantile(mean_values, 0.33)
     top <- quantile(mean_values, 0.66)
     
-    cat("--- Valores de corte calculados ---\n")
-    cat("Bottom (33%):", bot, "\n")
-    cat("Top (66%):", top, "\n")
-    cat("-----------------------------------\n")
-    
     high_set <- data[apply(data[, ca_cols], 1, function(x) all(x > top)), ]
     intermediate_set <- data[apply(data[, ca_cols], 1, function(x) all(x >= bot& x <= top)), ]
     low_set <- data[apply(data[, ca_cols], 1, function(x) all(x < bot)), ]
@@ -89,8 +84,8 @@ analyze_correlation <- function(data, cg_cols, ca_cols, threshold_type = "cg") {
 # mCA Context Analysis
 # ================================
 
-cg_path_bval <- "/home/epi-lab/Escritorio/Resultados/ventanas_cg_comun_cov5_bvalues"
-ca_path_mval <- "/home/epi-lab/Escritorio/Resultados/ventanas_ca_comun_cov5_Mvalues"
+cg_path_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues.tsv"
+ca_path_mval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_Mvalues.tsv"
 
 cg <- read_delim(cg_path_bval, delim = "\t")
 ca <- read_delim(ca_path_mval, delim = "\t")
@@ -114,8 +109,8 @@ cg_results
 # mCG Context Analysis
 # ================================
 
-cg_path_mval <- "/home/epi-lab/Escritorio/Resultados/ventanas_cg_comun_cov5_Mvalues"
-ca_path_bval <- "/home/epi-lab/Escritorio/Resultados/ventanas_ca_comun_cov5_bvalues"
+cg_path_mval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_Mvalues.tsv"
+ca_path_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_bvalues.tsv"
 
 cg <- read_delim(cg_path_mval, delim = "\t")
 ca <- read_delim(ca_path_bval, delim = "\t")

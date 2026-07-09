@@ -16,8 +16,8 @@ library(readr)
 # -----------------------------
 # Paths and parameters
 # -----------------------------
-path_com          <- "~/Escritorio/Resultados/Corr_with_age/COM_pos_filtered"
-path_universe_windows   <- "~/Escritorio/Resultados/Corr_with_age/universe_allgenome"
+path_com          <- "~/Escritorio/Resultados/CHH/Corr_age/genbody_COM_pos_close10k.txt"
+path_universe_windows   <- "~/Escritorio/Resultados/CHH/Corr_age/all_regions.txt"
 path_hmm_states   <- "~/Escritorio/Database/E073Brain_Dorsolateral_Prefrontal_Cortex primaryHMM.txt" # Obtain from https://genome.ucsc.edu/cgi-bin/hgTrackUi?hgsid=1173390897_aISDAANGAGsflKQ9uB9piMeAZYot&db=hg19&c=chr9&g=hub_1623_RoadmapConsolidatedHMM
 path_gene_bed     <- "~/Escritorio/Database/hg38.bed"
 
@@ -25,6 +25,7 @@ path_gene_bed     <- "~/Escritorio/Database/hg38.bed"
 # Load input data
 # -----------------------------
 com <- read_delim(path_com, delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+com$chr <- gsub("chr", "", com$chr)
 target_gr   <- makeGRangesFromDataFrame(com, keep.extra.columns = TRUE)
 # -----------------------------
 # Annotate regions
@@ -120,10 +121,10 @@ plot_or <- function(results_df, title) {
     )
 }
 
-plot_or(results_or)
+plot_or(results_or, "CoM")
 
 # -----------------------------
 # Save results
 # -----------------------------
-out_file <- paste0("COM_pos_close10k_", region_type, "_OR.txt")
+out_file <- paste0("COM__genbody_pos_far10k_OR.txt")
 write.table(results_or, file = out_file, sep = "\t", quote = FALSE, row.names = FALSE)

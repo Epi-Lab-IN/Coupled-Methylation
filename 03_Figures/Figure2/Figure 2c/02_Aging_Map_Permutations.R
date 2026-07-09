@@ -20,7 +20,7 @@ all_genes <- getBM(
   mart = ensembl
 )
 
-
+all_genes$chromosome_name <- paste0("chr", all_genes$chromosome_name)
 genes_gr <- makeGRangesFromDataFrame(
   all_genes,
   seqnames.field = "chromosome_name",
@@ -58,12 +58,12 @@ annotate_regions <- function(regions_df, genes_gr, mode = c("min", "max", "rando
     return(as.data.frame(res))
   } 
   
-  df$Diff <- regions_gr$Diff[queryHits(hits)]
+  df$diff <- regions_gr$diff[queryHits(hits)]
   
   res <- df %>%
     group_by(ensembl_gene_id) %>%
     summarise(
-      target_diff = if(mode == "min") min(Diff) else max(Diff),
+      target_diff = if(mode == "min") min(diff) else max(diff),
       n_regions = n(),
       .groups = "drop"
     ) %>%
@@ -76,26 +76,14 @@ annotate_regions <- function(regions_df, genes_gr, mode = c("min", "max", "rando
 # 3. LOAD SIGNIFICANT REGIONS & SUBSAMPLING
 # ================================================================
 # Load data
-com_pos <- read_delim("~/Escritorio/Resultados/cluster/genbody_COM_pos_close10k", delim = "\t", show_col_types = FALSE)
-com_neg <- read_delim("~/Escritorio/Resultados/cluster/genbody_COM_neg_close10k", delim = "\t", show_col_types = FALSE)
+com_pos <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_pos_close10k.txt", delim = "\t", show_col_types = FALSE)
+com_neg <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_neg_close10k.txt", delim = "\t", show_col_types = FALSE)
 
 # Annotate and filter genes with >= 2 regions
 genes_pos <- annotate_regions(com_pos, genes_gr, mode = "max") %>% dplyr::filter(n_regions >= 2)
 genes_neg <- annotate_regions(com_neg, genes_gr, mode = "min") %>% dplyr::filter(n_regions >= 2)
 
-# ----- GENE SUBSAMPLING -----
-# Find the minimum gene count to equalize both groups and prevent class imbalance
-min_genes_count <- min(nrow(genes_pos), nrow(genes_neg))
-
-set.seed(42) # Set seed for reproducibility
-genes_pos_sub <- genes_pos %>% sample_n(min_genes_count)
-genes_neg_sub <- genes_neg %>% sample_n(min_genes_count)
-
-cat("Number of genes after subsampling (equalized):", min_genes_count, "per group\n")
-
-# From here, define which group you want to use for the permutations. 
-# For example, we will use 'genes_neg_sub' as your target dataset.
-genes_target_perm <- genes_neg_sub 
+min_genes_count <- nrow(genes_neg) 
 
 # ================================================================
 # 4. MAP TO AGINGMAP
@@ -103,14 +91,13 @@ genes_target_perm <- genes_neg_sub
 aging_map <- read_delim("~/Escritorio/Database/epigenetic_genes.txt", delim="\t", trim_ws=TRUE, show_col_types = FALSE) #Select database for compare (https://sysomics.com/AgingMap/,https://epifactors.autosome.org, Kegg_AD )
 
 # Merge target genes with HGNC symbols
-annot_sig <- merge(genes_target_perm, annot_all, by.x="ensembl_gene_id", by.y="input")
+annot_sig <- merge(genes_neg, annot_all, by.x="ensembl_gene_id", by.y="input")
 
 # Calculate observed overlap with AgingMap database
 sig_genes_in_aging <- merge(annot_sig, aging_map, by.x="name", by.y="Symbol")
 observed_overlap <- nrow(sig_genes_in_aging)
 
 cat("Observed overlap with AgingMap:", observed_overlap, "\n")
-
 # ================================================================
 # 5. PERMUTATIONS
 # ================================================================
@@ -119,18 +106,15 @@ set.seed(42)
 overlap_counts <- numeric(n_perm)
 
 
-# (Make sure to change 'com_neg' to 'com_pos' if permuting the other set)
-n_windows <- nrow(com_neg) 
 
 chrom_sizes <- read.table("/home/epi-lab/Escritorio/Database/hg38.chrom.sizes", header=FALSE)
 colnames(chrom_sizes) <- c("chr", "size")
 chrom_sizes <- chrom_sizes[grepl("^chr[0-9XY]+$", chrom_sizes$chr), ]
-chrom_sizes$chr <- gsub("^chr", "", chrom_sizes$chr)
 pb <- txtProgressBar(min=0, max=n_perm, style=3)
 
 for(i in 1:n_perm){
   # 1. Select random chromosomes weighted by their size
-  rand_chrs <- sample(chrom_sizes$chr, n_windows, replace=TRUE, 
+  rand_chrs <- sample(chrom_sizes$chr, min_genes_count, replace=TRUE, 
                       prob=chrom_sizes$size / sum(chrom_sizes$size))
   
   # 2. Select random start positions
@@ -143,9 +127,15 @@ for(i in 1:n_perm){
   rand_df <- data.frame(chr = rand_chrs, start = rand_starts, end = rand_starts + 100)
   
   # 4. Annotate random regions and filter by >= 2 regions
-  rand_genes <- annotate_regions(rand_df, genes_gr, mode = "random") %>% filter(n_regions >= 2)
+  rand_genes <- annotate_regions(rand_df, genes_gr, mode = "random") %>% 
+    filter(n_regions >= 2)
   
-  # 5. Count overlaps with AgingMap
+  # 5. Cap to min_genes_count if exceeded; otherwise use all available genes
+  if(nrow(rand_genes) > min_genes_count){
+    rand_genes <- rand_genes %>% sample_n(min_genes_count)
+  }
+  
+  # 6. Count overlaps with AgingMap
   if(nrow(rand_genes) > 0){
     annot_rand <- merge(rand_genes, annot_all, by.x="ensembl_gene_id", by.y="input")
     overlap_counts[i] <- nrow(merge(annot_rand, aging_map, by.x="name", by.y="Symbol"))

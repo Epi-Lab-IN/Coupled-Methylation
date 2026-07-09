@@ -13,10 +13,10 @@ suppressPackageStartupMessages({
 # ================================================================
 # 1. LOAD SIGNIFICANT GENE SETS
 # ================================================================
-genes_pos <- read_delim("~/Escritorio/Resultados/Corr_with_age/COM_pos_genbody_agingMap_updated", 
+genes_pos <- read_delim("~/Escritorio/Resultados/CHH/genes/genes_COM_pos_aggregated.txt", 
                         delim = "\t", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)
 
-genes_neg <- read_delim("~/Escritorio/Resultados/Corr_with_age/COM_neg_genbody_agingMap_updated", 
+genes_neg <- read_delim("~/Escritorio/Resultados/CHH/genes/genes_COM_neg_aggregated.txt", 
                         delim = "\t", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)
 
 # ================================================================
@@ -79,6 +79,11 @@ plot_median_expression_noCollapse <- function(genes, controles_df, plot_color, p
   r2_real <- summary(modelo_real)$r.squared
   p_real  <- broom::tidy(modelo_real)$p.value[2]
   
+  # Spearman correlation (non-parametric)
+  spearman_real <- cor.test(rna_sel$Age, rna_sel$median_expr, method = "spearman")
+  rho_real <- spearman_real$estimate
+  p_spearman_real <- spearman_real$p.value
+  
   # =========================
   # B. RANDOM GENES (NO OVERLAP)
   # =========================
@@ -107,10 +112,17 @@ plot_median_expression_noCollapse <- function(genes, controles_df, plot_color, p
   r2_random <- summary(modelo_random)$r.squared
   p_random  <- broom::tidy(modelo_random)$p.value[2]
   
+  # Spearman correlation for random background
+  spearman_random <- cor.test(rna_random$Age, rna_random$median_expr, method = "spearman")
+  rho_random <- spearman_random$estimate
+  p_spearman_random <- spearman_random$p.value
+  
   # --- Print Stats to Console ---
   cat("\n==============================\n")
   cat("Target Genes -> R² =", round(r2_real, 3), " | P (lm) =", signif(p_real, 3), "\n")
+  cat("Target Genes -> Spearman rho =", round(rho_real, 3), " | P (spearman) =", signif(p_spearman_real, 3), "\n")
   cat("Random Genes -> R² =", round(r2_random, 3), "| P (lm) =", signif(p_random, 3), "\n")
+  cat("Random Genes -> Spearman rho =", round(rho_random, 3), " | P (spearman) =", signif(p_spearman_random, 3), "\n")
   cat("==============================\n")
   
   # --- Visualization ---
@@ -127,12 +139,12 @@ plot_median_expression_noCollapse <- function(genes, controles_df, plot_color, p
                 method = "lm", se = TRUE, color = plot_color, fill = plot_color, alpha = 0.15) +
     
     labs(x = "Age", y = "RNA Z-score", title = plot_title) +
-    coord_cartesian(ylim = c(-0.5, 0.5)) + # Better than ylim() as it avoids dropping data points for the LM calculation
+    coord_cartesian(ylim = c(-0.5, 0.5)) + 
     scale_x_continuous(breaks = seq(40, 100, by = 20)) +
     
     theme_bw(base_size = 14) +
     theme(
-      # Updated 'size' to 'linewidth' to fix ggplot2 deprecation warnings
+     
       panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
       axis.line = element_line(linewidth = 1),  
       axis.ticks = element_line(linewidth = 1), 
@@ -142,7 +154,7 @@ plot_median_expression_noCollapse <- function(genes, controles_df, plot_color, p
       legend.title = element_text(size = 19),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(), 
-      plot.title = element_text(hjust = 0.5, size = 16, face = "bold") # Fixed size from string to numeric
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold") 
     )
   
   print(g)
@@ -153,7 +165,7 @@ plot_median_expression_noCollapse <- function(genes, controles_df, plot_color, p
 # ================================================================
 # Plot CoM+
 plot_median_expression_noCollapse(
-  genes = genes_pos$Gene,
+  genes = genes_pos$gene_symbol,
   controles_df = controles,
   plot_color = "#4a0480",
   plot_title = "CoM+ genes (GSE36192+GSE33000+GSE15222)"
@@ -161,7 +173,7 @@ plot_median_expression_noCollapse(
 
 # Plot CoM-
 plot_median_expression_noCollapse(
-  genes = genes_neg$Gene, 
+  genes = genes_neg$gene_symbol, 
   controles_df = controles, 
   plot_color = "#ab8f02",
   plot_title = "CoM- genes (GSE36192+GSE33000+GSE15222)"

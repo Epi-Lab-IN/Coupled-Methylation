@@ -128,7 +128,14 @@ ggplot(closest_differences, aes(x = distance, y = metilacion_noncpg, color = gro
     bins = 15
   ) +
   xlim(-500, 500) +
-  theme_classic() +
+  theme_classic(base_size = 16) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18),
+    axis.text  = element_text(color = "black", size = 14),
+    axis.title = element_text(size = 16),
+    axis.ticks = element_line(size = 1),
+    axis.line  = element_line(size = 1)
+  )+
   scale_fill_manual(
     values = c(
       "UnMethylated" = "#F4A896", 

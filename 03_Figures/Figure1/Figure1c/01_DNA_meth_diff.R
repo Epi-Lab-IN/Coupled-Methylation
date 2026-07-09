@@ -25,7 +25,7 @@ merge_overlaps <- function(cg_df, ca_df, cg_gr, ca_gr) {
 
 # Calculate mean methylation per sample for given columns
 calculate_means <- function(df, cols) {
-  colMeans(df[, cols], na.rm = TRUE) * 100  # multiply by 100
+  colMeans(df[, cols], na.rm = TRUE)  
 }
 
 # Extract categories based on thresholds
@@ -58,8 +58,8 @@ diff_young_old <- function(x) {
 # ================================
 # CG context analysis (mCA depending on mCG)
 # ================================
-cg_bval <- "/home/epi-lab/Escritorio/Resultados/ventanas_cg_comun_cov5_bvalues"
-ca_bval <- "/home/epi-lab/Escritorio/Resultados/ventanas_ca_comun_cov5_bvalues"
+cg_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues.tsv"
+ca_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_bvalues.tsv"
 
 cg <- read_delim(cg_bval, delim = "\t")
 ca <- read_delim(ca_bval, delim = "\t")
