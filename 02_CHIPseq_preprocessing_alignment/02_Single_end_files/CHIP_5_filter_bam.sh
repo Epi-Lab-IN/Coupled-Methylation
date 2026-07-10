@@ -2,6 +2,7 @@
 
 
 # 1. Environment Setup
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate methylation
 
 # 2. Path Configuration

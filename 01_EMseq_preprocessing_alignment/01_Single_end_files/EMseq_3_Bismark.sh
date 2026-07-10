@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # 1. Setup
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate methylation
 
 GENOME_FOLDER="./genome"

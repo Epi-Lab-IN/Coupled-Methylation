@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # 1. Environment Setup
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate methylation
 
 # 2. Path Configuration
 # Specify the folder where your FASTQ files are
-FASTQ_DIR="~/Escritorio/raw_data"
-GENOME_INDEX="~/Escritorio/hg38_index/hg38" # Make sure this is the prefix!
-OUTDIR="~/Escritorio/results/aln"
+FASTQ_DIR="$HOME/Escritorio/raw_data"
+GENOME_INDEX="$HOME/Escritorio/hg38_index/hg38" # Make sure this is the prefix!
+OUTDIR="$HOME/Escritorio/results/aln"
 THREADS=10
 
 # Create output directory if it does not exist

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # 1. Initialize Conda for shell script compatibility
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate trim
 
 # 2. Create output directories to keep the workspace clean

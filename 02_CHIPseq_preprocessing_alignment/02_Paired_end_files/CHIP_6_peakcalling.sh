@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # 1. Environment Setup
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate epic2_env
 
 # 2. Configuration & Paths

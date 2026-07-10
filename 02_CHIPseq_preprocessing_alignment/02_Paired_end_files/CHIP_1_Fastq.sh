@@ -1,5 +1,6 @@
 #!/bin/bash/
 # 1. Environment Setup
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate trim
 
 # 2. Directory Configuration
