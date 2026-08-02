@@ -83,15 +83,15 @@ com_neg <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_
 genes_pos <- annotate_regions(com_pos, genes_gr, mode = "max") %>% dplyr::filter(n_regions >= 2)
 genes_neg <- annotate_regions(com_neg, genes_gr, mode = "min") %>% dplyr::filter(n_regions >= 2)
 
-min_genes_count <- nrow(genes_neg) 
+min_genes_count <- nrow(com_pos) 
 
 # ================================================================
 # 4. MAP TO AGINGMAP
 # ================================================================
-aging_map <- read_delim("~/Escritorio/Database/epigenetic_genes.txt", delim="\t", trim_ws=TRUE, show_col_types = FALSE) #Select database for compare (https://sysomics.com/AgingMap/,https://epifactors.autosome.org, Kegg_AD )
+aging_map <- read_delim("~/Escritorio/Database/Alzheimer_database.txt", delim="\t", trim_ws=TRUE, show_col_types = FALSE) #Select database for compare (https://sysomics.com/AgingMap/,https://epifactors.autosome.org, Kegg_AD )
 
 # Merge target genes with HGNC symbols
-annot_sig <- merge(genes_neg, annot_all, by.x="ensembl_gene_id", by.y="input")
+annot_sig <- merge(genes_pos, annot_all, by.x="ensembl_gene_id", by.y="input")
 
 # Calculate observed overlap with AgingMap database
 sig_genes_in_aging <- merge(annot_sig, aging_map, by.x="name", by.y="Symbol")

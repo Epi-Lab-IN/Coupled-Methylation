@@ -33,7 +33,6 @@ get_categories <- function(df, cols, type = "cg") {
   if(type == "cg") {
     list(
       high = df[apply(df[, cols], 1, function(x) all(x > 0.66)), ],
-      intermediate = df[apply(df[, cols], 1, function(x) all(x >= 0.33 & x <= 0.66)), ],
       low = df[apply(df[, cols], 1, function(x) all(x < 0.33)), ]
     )
   } else {
@@ -42,7 +41,6 @@ get_categories <- function(df, cols, type = "cg") {
     q1 <- quantile(df$mean, 0.66)
     list(
       high = df[apply(df[, cols], 1, function(x) all(x > q1)), ],
-      intermediate = df[apply(df[, cols], 1, function(x) all(x >= q3 & x <= q1)), ],
       low = df[apply(df[, cols], 1, function(x) all(x < q3)), ]
     )
   }
@@ -58,8 +56,8 @@ diff_young_old <- function(x) {
 # ================================
 # CG context analysis (mCA depending on mCG)
 # ================================
-cg_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues.tsv"
-ca_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_bvalues.tsv"
+cg_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues_cowindows.tsv"
+ca_bval <- "/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_bvalues_cowindows.tsv"
 
 cg <- read_delim(cg_bval, delim = "\t")
 ca <- read_delim(ca_bval, delim = "\t")
@@ -70,11 +68,9 @@ combined_windows <- merge_overlaps(cg, ca, cg_gr, ca_gr)
 cg_categories <- get_categories(combined_windows, 4:10, type = "cg")
 
 medias_mca_mcg <- calculate_means(cg_categories$high, 11:17)
-medias_mca_hmcg <- calculate_means(cg_categories$intermediate, 11:17)
 medias_mca_umcg <- calculate_means(cg_categories$low, 11:17)
 
 diff_mca_mcg <- diff_young_old(medias_mca_mcg)
-diff_mca_hmcg <- diff_young_old(medias_mca_hmcg)
 diff_mca_umcg <- diff_young_old(medias_mca_umcg)
 
 # ================================
@@ -89,11 +85,9 @@ combined_windows <- merge_overlaps(cg, ca, cg_gr, ca_gr)
 ca_categories <- get_categories(combined_windows, 11:17, type = "ca")
 
 medias_mcg_mca <- calculate_means(ca_categories$high, 4:10)
-medias_mcg_hmca <- calculate_means(ca_categories$intermediate, 4:10)
 medias_mcg_umca <- calculate_means(ca_categories$low, 4:10)
 
 diff_mcg_mca <- diff_young_old(medias_mcg_mca)
-diff_mcg_hmca <- diff_young_old(medias_mcg_hmca)
 diff_mcg_umca <- diff_young_old(medias_mcg_umca)
 
 # ================================
@@ -102,14 +96,12 @@ diff_mcg_umca <- diff_young_old(medias_mcg_umca)
 mCA_context <- data.frame(
   bvalues = "mCA",
   umCG = diff_mca_umcg,
-  hmCG = diff_mca_hmcg,
   mCG = diff_mca_mcg
 )
 
 mCG_context <- data.frame(
   bvalues = "mCG",
   umCA = diff_mcg_umca,
-  hmCA = diff_mcg_hmca,
   mCA = diff_mcg_mca
 )
 

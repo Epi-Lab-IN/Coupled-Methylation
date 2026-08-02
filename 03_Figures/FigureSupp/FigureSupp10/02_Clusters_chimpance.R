@@ -13,7 +13,7 @@ library(readr)
 # ================================
 com <- read_delim("Escritorio/Animals/CHH/chimpance/Corr_with_age/CoM_neg_chimpance",
                   delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-# Diccionario basado en mPanTro3-v2.1
+# Dictionary based on mPanTro3-v2.1
 map_refseq_to_chr <- c(
   "NC_072398.2" = "chr1",
   "NC_086015.1" = "chr2A",  
@@ -43,7 +43,7 @@ map_refseq_to_chr <- c(
   "NC_001643.1" = "chrM"
 )
 com$chr <- map_refseq_to_chr[com$chr]
-chromsizes <- read.table("/home/epi-lab/Escritorio/Database/panTro3.chrom.sizes.txt", header=FALSE) # We obtain from https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes
+chromsizes <- read.table("/home/epi-lab/Escritorio/Database/panTro3.chrom.sizes.txt", header=FALSE) # Obtained from https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes
 colnames(chromsizes) <- c("chr", "size")
 chromsizes <- chromsizes[grepl("^chr[0-9XY]+$", chromsizes$chr), ]
 
@@ -100,25 +100,25 @@ ggplot(combined_df, aes(x = distance_to_next, fill = group)) +
 
 
 # ================================
-# Función para obtener ventanas cercanas (<10kb) sin repeticiones
+# Function to get nearby windows (<10kb) without duplicates
 # ================================
 get_close_windows <- function(df, max_dist = 10000) {
   gr <- GRanges(df$chr, IRanges(df$start, df$start + 99))
   
-  # Encontramos todas las ventanas que están a menos de max_dist
+  # Find all windows that are less than max_dist apart
   hits <- findOverlaps(gr, gr, maxgap = max_dist, type = "any")
   
-  # Eliminamos auto-overlaps
+  # Remove self-overlaps
   hits <- hits[queryHits(hits) != subjectHits(hits)]
   
-  # Tomamos todos los índices únicos de ventanas cercanas
+  # Take all unique indices of nearby windows
   close_indices <- unique(c(queryHits(hits), subjectHits(hits)))
   
-  # Devolvemos el dataframe filtrado sin repeticiones
+  # Return the filtered dataframe without duplicates
   df[close_indices, ]
 }
 # ================================
-# Aplicamos la función a los dos grupos
+# Apply the function to both groups
 # ================================
 close_sig_windows <- get_close_windows(sig_df, max_dist = 10002)
 write.table(close_sig_windows[5:7], "com_pos_chimpance_clusters", sep = "\t", row.names = FALSE, col.names = FALSE)
@@ -126,27 +126,27 @@ write.table(close_sig_windows[5:7], "com_pos_chimpance_clusters", sep = "\t", ro
 close_non_sig_windows <- get_close_windows(non_sig_df, max_dist = 10002)
 
 # ================================
-# Fisher test: proporción de ventanas cercanas (<10kb)
+# Fisher test: proportion of nearby windows (<10kb)
 # ================================
 
-# Añadimos ID único a cada ventana
+# Add a unique ID to each window
 sig_df <- sig_df %>% mutate(id = paste0("sig_", row_number()))
 non_sig_df <- non_sig_df %>% mutate(id = paste0("non_", row_number()))
 df_all <- bind_rows(sig_df, non_sig_df)
 
-# Detectamos las ventanas cercanas en cada grupo
+# Detect nearby windows in each group
 close_sig <- get_close_windows(sig_df, max_dist = 10000)
 close_non_sig <- get_close_windows(non_sig_df, max_dist = 10000)
 random_gr <- makeGRangesFromDataFrame(close_non_sig_windows, keep.extra.columns = TRUE)
-# Marcamos las que están en clusters cercanos
+# Flag windows that fall within nearby clusters
 df_all <- df_all %>%
   mutate(close = id %in% c(close_sig$id, close_non_sig$id))
 
-# Creamos tabla 2x2: grupo vs cercanía
+# Build 2x2 table: group vs. proximity
 contingency <- table(df_all$group, df_all$close)
 print(contingency)
 
-# Ejecutamos test de Fisher
+# Run Fisher's exact test
 fisher_result_exact <- fisher.test(contingency[2:1, ], alternative = "greater")
 print(fisher_result_exact$p.value, digits=20)
 
@@ -158,7 +158,7 @@ com_gr <- makeGRangesFromDataFrame(close_sig_windows, keep.extra.columns = TRUE)
 library(biomaRt)
 library(GenomicRanges)
 
-# 1. Conectar al mart de Chimpancé
+# 1. Connect to the chimpanzee Ensembl mart
 chimp_ensembl <- useMart("ensembl", dataset = "ptroglodytes_gene_ensembl")
 
 annot_chimp <- getBM(
@@ -174,10 +174,10 @@ annot_chimp <- getBM(
   mart = chimp_ensembl
 )
 
-# Filtrar para obtener solo los ortólogos más fiables (1 a 1)
+# Keep only the most reliable orthologs (one-to-one)
 orthos_clean <- annot_chimp[annot_chimp$hsapiens_homolog_orthology_type == "ortholog_one2one", ]
 
-# Renombrar para mayor claridad
+# Rename for clarity
 colnames(orthos_clean) <- c("gene_id_chimp", "chr", "start", "end", "gene_name", "gene_id_human", "orthology_type")
 orthos_clean$chr <- paste0("chr", orthos_clean$chr)
 genes_chimp_gr <- makeGRangesFromDataFrame(orthos_clean, keep.extra.columns = TRUE)
@@ -208,14 +208,14 @@ df_por_gen <- as.data.frame(df_por_gen)
 genes_com_chimp <- df_por_gen[df_por_gen$n_ventanas>1,]
 
 
-# 1. Solapamiento de las ventanas RANDOM con los genes de chimpancé
+# 1. Overlap of RANDOM windows with chimpanzee genes
 hits_random <- findOverlaps(random_gr, genes_chimp_gr)
 
-# 2. Crear el dataframe de genes obtenidos por azar
+# 2. Build the dataframe of randomly obtained genes
 genes_random_data <- cbind(orthos_clean[subjectHits(hits_random),], 
                            close_non_sig_windows[queryHits(hits_random),])
 genes_random_data <- genes_random_data[-c(2:4)]
-# 3. Resumir por gen (igual que hiciste con CoM)
+# 3. Summarize by gene (same as done for CoM)
 genes_random_summary <- genes_random_data %>%
   group_by(gene_id_chimp) %>%
   summarise(
@@ -223,21 +223,21 @@ genes_random_summary <- genes_random_data %>%
     gene_name = dplyr::first(gene_name),
     human_gene_id = dplyr::first(gene_id_human)
   ) %>%
-  filter(n_ventanas > 1) # Mantener el mismo criterio de filtrado
+  filter(n_ventanas > 1) # Keep the same filtering criterion
 
 #####
 genes_human <-  read_delim("Escritorio/Resultados/CHH/genes/genes_COM_neg_aggregated.txt", 
-                   delim = "\t", escape_double = FALSE, 
-                   trim_ws = TRUE)
+                           delim = "\t", escape_double = FALSE, 
+                           trim_ws = TRUE)
 
-# IDs de genes humanos de referencia (tu agingMap)
+# Reference human gene IDs (your aging map)
 human_ref_ids <- unique(genes_human$gene_symbol)
 
-# Genes que coinciden en el grupo REAL
+# Genes matching in the REAL group
 coincidencias_real <- sum(genes_com_chimp$gene_name %in% human_ref_ids)
 total_real <- nrow(genes_com_chimp)
 
-# Genes que coinciden en el grupo RANDOM
+# Genes matching in the RANDOM group
 coincidencias_random <- sum(genes_random_summary$gene_name %in% human_ref_ids)
 total_random <- nrow(genes_random_summary)
 

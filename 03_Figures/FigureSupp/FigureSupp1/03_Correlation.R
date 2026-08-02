@@ -3,7 +3,7 @@ library(dplyr)
 library(GenomicRanges)
 
 BASE_DIR <- "/home/epi-lab/Escritorio/Resultados/CHH/Correcciones/Size_windows/"
-SAMPLES  <- c("35y", "43y", "55y", "67y", "78y", "85y", "103y")
+SAMPLES  <- c("M1", "M2", "M3", "M4", "M5", "M6", "M7")
 
 OUT_DIR <- file.path(BASE_DIR, "resultados_por_muestra")
 if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)

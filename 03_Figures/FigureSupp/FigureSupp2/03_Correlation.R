@@ -1,193 +1,137 @@
-#Load libraries
 library(readr)
 library(dplyr)
-library(ggplot2)
 library(GenomicRanges)
 
-# Load the CG methylation windows and convert to GRanges
-cpg <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/100bqW_M1_CG_min3", 
-  delim = "\t", 
-  escape_double = FALSE,   
-  trim_ws = TRUE
-)
-cpg <- makeGRangesFromDataFrame(cpg, keep.extra.columns = TRUE)
+BASE_DIR <- "/home/epi-lab/Escritorio/Resultados/CHH/Correcciones/Size_windows/"
+SAMPLES  <- c("M1", "M2", "M3", "M4", "M5", "M6", "M7")
 
-# Load the common CG windows and convert to GRanges
-comun_cpg <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/100bqW_M1_CG_min3", 
-  delim = "\t", 
-  escape_double = FALSE,   
-  trim_ws = TRUE
-)
-cgsample <- makeGRangesFromDataFrame(comun_cpg, keep.extra.columns = TRUE)
+OUT_DIR <- file.path(BASE_DIR, "resultados_por_muestra")
+if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 
-# Keep only CG windows overlapping with the common regions
-cgsample <- cpg[cpg %over% cgsample, ]
-cgsample <- as.data.frame(cgsample)
-cgsample$width <- NULL  # Remove unnecessary column
-colnames(cgsample)[1] <- "chr"  # Rename chromosome column for consistency
-
-# Load non-CG methylation windows
-non_cg_windows <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/100bqW_M1_CA_min3",
-  delim = "\t", 
-  escape_double = FALSE,  
-  trim_ws = TRUE
+# Common CA regions, same for all samples (loaded once)
+comun_ca_GR <- makeGRangesFromDataFrame(
+  read_delim(file.path(BASE_DIR, "CA_comun_1000"),
+             delim = "\t", trim_ws = TRUE, show_col_types = FALSE),
+  keep.extra.columns = TRUE
 )
 
-# Calculate % methylation and M-values for non-CG
-non_cg_windows <- cbind(
-  non_cg_windows, 
-  CA_methylation = (non_cg_windows$numCs / non_cg_windows$coverage) * 100
-)
-non_cg_windows$mvalues_ca <- log2((non_cg_windows$numCs + 0.1) / (non_cg_windows$numTs + 0.1))
+# Final summary table
+summary_table <- data.frame()
 
-# Convert to GRanges
-non_cg_windows_GR <- makeGRangesFromDataFrame(non_cg_windows, keep.extra.columns = TRUE)
-
-# Load common non-CG regions and filter
-comun <- read_delim(
-  "/home/epi-lab/Escritorio/Resultados/CA_comunes_10cov_min3",
-  delim = "\t", 
-  escape_double = FALSE,   
-  trim_ws = TRUE
-)
-comun_GR <- makeGRangesFromDataFrame(comun, keep.extra.columns = TRUE)
-non_cg_windows_GR <- non_cg_windows_GR[non_cg_windows_GR %over% comun_GR, ]
-non_cg_windows <- as.data.frame(non_cg_windows_GR)
-non_cg_windows$width <- NULL  # Remove unnecessary column
-
-# Calculate CG % methylation and M-values
-cgsample <- cbind(
-  cgsample, 
-  CG_methylation = (cgsample$numCs / cgsample$coverage) * 100
-)
-cgsample$mvalues_cg <- log2((cgsample$numCs + 0.1) / (cgsample$numTs + 0.1))
-
-# Convert CG sample to GRanges
-cgsample_GR <- makeGRangesFromDataFrame(cgsample, keep.extra.columns = TRUE)
-
-# Plot density distribution of CG methylation
-ggplot(cgsample, aes(x = CG_methylation)) +
-  geom_density(fill = "#3182bd", color = "#1c6ca6", alpha = 0.7) +
-  labs(
-    title = "Distribution of % CG Methylation",
-    x = "% Methylation per base",
-    y = "Frequency"
-  ) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-# Classify CG windows based on methylation levels
-unmethylated <- filter(cgsample, CG_methylation < 33)
-hemimethylated <- filter(cgsample, CG_methylation >= 33 & CG_methylation <= 66)
-methylated <- filter(cgsample, CG_methylation > 66)
-
-# Convert categories to GRanges
-unmethylated_GR <- GRanges(
-  seqnames = unmethylated$chr, 
-  ranges = IRanges(start = unmethylated$start, end = unmethylated$end), 
-  CG_methylation = unmethylated$CG_methylation
-)
-hemimethylated_GR <- GRanges(
-  seqnames = hemimethylated$chr, 
-  ranges = IRanges(start = hemimethylated$start, end = hemimethylated$end), 
-  CG_methylation = hemimethylated$CG_methylation
-)
-methylated_GR <- GRanges(
-  seqnames = methylated$chr, 
-  ranges = IRanges(start = methylated$start, end = methylated$end),
-  CG_methylation = methylated$CG_methylation
-)
-
-# Plot histogram of CA methylation
-ggplot(non_cg_windows, aes(x = CA_methylation)) +
-  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", alpha = 0.7) +
-  labs(
-    title = "Distribution of % CA Methylation", 
-    x = "% Methylation per base", 
-    y = "Frequency"
-  ) +
-  theme_classic()
-
-# Identify overlaps between CA windows and unmethylated CG regions
-UM_over_hits <- findOverlaps(non_cg_windows_GR, unmethylated_GR)
-UM <- cbind(
-  unmethylated[subjectHits(UM_over_hits), ], 
-  non_cg_windows[queryHits(UM_over_hits), ]
-)
-UMwindows <- UM[, c(1, 2, 3, 8, 9, 17, 18)]
-UMwindows_GR_c <- makeGRangesFromDataFrame(
-  UMwindows, 
-  keep.extra.columns = TRUE, 
-  start.field = "start", 
-  end.field = "end",
-  seqnames.field = "chr"
-)
-
-# Overlaps with hemimethylated CG windows
-HM_over_hits <- findOverlaps(non_cg_windows_GR, hemimethylated_GR)
-HM <- cbind(
-  hemimethylated[subjectHits(HM_over_hits), ],
-  non_cg_windows[queryHits(HM_over_hits), ]
-)
-HMwindows <- HM[, c(1, 2, 3, 8, 9, 17, 18)]
-HMwindows_GR_c <- makeGRangesFromDataFrame(
-  HMwindows, 
-  keep.extra.columns = TRUE, 
-  start.field = "start", 
-  end.field = "end",
-  seqnames.field = "chr"
-)
-
-# Overlaps with methylated CG windows
-M_over_hits <- findOverlaps(non_cg_windows_GR, methylated_GR)
-M <- cbind(
-  methylated[subjectHits(M_over_hits), ],
-  non_cg_windows[queryHits(M_over_hits), ]
-)
-Mwindows <- M[, c(1, 2, 3, 8, 9, 17, 18)]
-Mwindows_GR_c <- makeGRangesFromDataFrame(
-  Mwindows,
-  keep.extra.columns = TRUE, 
-  start.field = "start", 
-  end.field = "end", 
-  seqnames.field = "chr"
-)
-
-# Calculate fold change of CA methylation between methylated and unmethylated CG contexts
-foldchange <- mean(Mwindows$CA_methylation) / mean(UMwindows$CA_methylation)
-
-# Merge all categories into one data frame
-cowindows <- rbind(
-  UMwindows, 
-  HMwindows, 
-  Mwindows
+for (sample in SAMPLES) {
+  
+  message("Processing: ", sample)
+  
+  # ── 1. Load CG ──────────────────────────────────────────────────────────────
+  cpg_raw <- read_delim(
+    file.path(BASE_DIR, paste0(  "CG_",sample,"_1000")),
+    delim = "\t", trim_ws = TRUE, show_col_types = FALSE
   )
+  cpg_GR <- makeGRangesFromDataFrame(cpg_raw, keep.extra.columns = TRUE)
+  
+  # Common CG regions for this sample
+  comun_cpg_GR <- makeGRangesFromDataFrame(
+    read_delim(
+      file.path(BASE_DIR, paste0("CG_comun_1000bp.txt")),  # adjust name if needed
+      delim = "\t", trim_ws = TRUE, show_col_types = FALSE
+    ),
+    keep.extra.columns = TRUE
+  )
+  
+  # Filter CG by its own common regions
+  cgsample       <- as.data.frame(cpg_GR[cpg_GR %over% comun_cpg_GR])
+  cgsample$width <- NULL
+  colnames(cgsample)[1] <- "chr"
+  
+  # CG metrics
+  cgsample$CG_bvalues <- (cgsample$numCs / cgsample$coverage) * 100
+  cgsample$CG_mvalues     <- log2((cgsample$numCs + 0.1) / (cgsample$numTs + 0.1))
+  
+  # Save CG windows (before overlapping with CA)
+  write_tsv(
+    cgsample[, c("chr", "start", "end", "CG_bvalues", "CG_mvalues")],
+    file.path(OUT_DIR, paste0("CG_windows_", sample, ".tsv"))
+  )
+  
+  # ── 2. Load CA ──────────────────────────────────────────────────────────────
+  ca_raw <- read_delim(
+    file.path(BASE_DIR, paste0( "CA_",sample,"_1000")),  # adjust name if needed
+    delim = "\t", trim_ws = TRUE, show_col_types = FALSE
+  )
+  ca_raw$CA_bvalues <- (ca_raw$numCs / ca_raw$coverage) * 100
+  ca_raw$CA_mvalues     <- log2((ca_raw$numCs + 0.1) / (ca_raw$numTs + 0.1))
+  
+  ca_GR <- makeGRangesFromDataFrame(ca_raw, keep.extra.columns = TRUE)
+  
+  # Filter CA by the shared common regions
+  ca_filt       <- as.data.frame(ca_GR[ca_GR %over% comun_ca_GR])
+  ca_filt$width <- NULL
+  colnames(ca_filt)[1] <- "chr"
+  
+  # Save CA windows (before overlapping with CG categories)
+  write_tsv(
+    ca_filt[, c("chr", "start", "end", "CA_bvalues", "CA_mvalues")],
+    file.path(OUT_DIR, paste0("CA_windows_", sample, ".tsv"))
+  )
+  
+  # ── 3. Classify CG windows ──────────────────────────────────────────────────
+  unmethylated_GR   <- makeGRangesFromDataFrame(
+    filter(cgsample, CG_bvalues < 33), keep.extra.columns = TRUE)
+  hemimethylated_GR <- makeGRangesFromDataFrame(
+    filter(cgsample, CG_bvalues >= 33 & CG_bvalues <= 66), keep.extra.columns = TRUE)
+  methylated_GR     <- makeGRangesFromDataFrame(
+    filter(cgsample, CG_bvalues > 66), keep.extra.columns = TRUE)
+  
+  ca_GR_filt <- makeGRangesFromDataFrame(ca_filt, keep.extra.columns = TRUE)
+  
+  # ── 4. Overlaps CA ↔ CG classes ─────────────────────────────────────────────
+  make_windows <- function(ca_gr, cg_gr) {
+    hits <- findOverlaps(ca_gr, cg_gr)
+    df   <- cbind(
+      as.data.frame(cg_gr[subjectHits(hits)])[, c("seqnames", "start", "end", "CG_bvalues", "CG_mvalues")],
+      as.data.frame(ca_gr[queryHits(hits)])[,  c("CA_bvalues", "CA_mvalues")]
+    )
+    colnames(df)[1] <- "chr"
+    df
+  }
+  
+  UMwindows <- make_windows(ca_GR_filt, unmethylated_GR)
+  HMwindows <- make_windows(ca_GR_filt, hemimethylated_GR)
+  Mwindows  <- make_windows(ca_GR_filt, methylated_GR)
+  
+  # cowindows with sample name
+  assign(paste0("cowindows_", sample), rbind(UMwindows, HMwindows, Mwindows))
+  cowindows <- get(paste0("cowindows_", sample))
+  
+  # Save cowindows for this sample
+  write_tsv(
+    cowindows,
+    file.path(OUT_DIR, paste0("cowindows_", sample, ".tsv"))
+  )
+  
+  # ── 5. Statistics ────────────────────────────────────────────────────────────
+  foldchange  <- mean(Mwindows$CA_bvalues) / mean(UMwindows$CA_bvalues)
+  spear       <- cor.test(cowindows$CA_bvalues, cowindows$CG_bvalues, method = "spearman")
+  reg         <- summary(lm(CA_mvalues ~ CG_mvalues, data = cowindows))
+  
+  summary_table <- rbind(summary_table, data.frame(
+    Sample       = sample,
+    CG_lvl       = mean(cgsample$CG_bvalues),
+    CA_lvl       = mean(ca_filt$CA_bvalues),
+    mCA_mCG      = mean(Mwindows$CA_bvalues),
+    mCA_hmCG     = mean(HMwindows$CA_bvalues),
+    mCA_umCG     = mean(UMwindows$CA_bvalues),
+    delta_mCA    = mean(Mwindows$CA_bvalues) - mean(ca_filt$CA_bvalues),
+    FC           = foldchange,
+    Spearman     = spear$estimate,
+    pvalue_spear = spear$p.value,
+    Slope        = reg$coefficients[2, 1],
+    R_adj        = reg$adj.r.squared,
+    Intercept    = reg$coefficients[1, 1],
+    pvalue_lm    = reg$coefficients[2, 4]
+  ))
+}
 
-# Spearman correlation between CA and CG methylation
-spear <- cor.test(
-  cowindows$CA_methylation, 
-  cowindows$CG_methylation, 
-  method = "spearman"
-)
-
-# Linear regression using M-values
-reg_mvalue <- summary(
-  lm(mvalues_ca ~ mvalues_cg, data = cowindows)
-)
-
-# Summary statistics
-resume <- data.frame(
-  cg = mean(cgsample$CG_methylation),
-  ca = mean(non_cg_windows_GR$CA_methylation),
-  mca = mean(Mwindows$CA_methylation), 
-  delta = mean(Mwindows$CA_methylation) - mean(non_cg_windows_GR$CA_methylation),
-  FC = foldchange,
-  Spearman = spear$estimate,
-  slope = reg_mvalue$coefficients[2],
-  R.adj = reg_mvalue$adj.r.squared,
-  intercept = reg_mvalue$coefficients[1]
-)
-
+# Show and save the summary table
+print(summary_table)
+write_tsv(summary_table, file.path(BASE_DIR, "summary_CA_CG_1000.tsv"))

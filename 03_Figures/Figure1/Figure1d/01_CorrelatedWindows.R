@@ -21,12 +21,12 @@ compute_lm_metrics <- function(row) {
 ######################## CoM+ Regions ###############################
 
 # Re-read data for overlap analysis
-ca_windows <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_Mvalues.tsv",
+ca_windows <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/EMseq_ca_comunes_Mvalues_cowindows.tsv",
                          delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 colnames(ca_windows)[4:10] <- c("age35_ca", "age43_ca", "age55_ca", "age67_ca", "age78_ca", "age85_ca", "age103_ca")
 ca_windows_gr <- makeGRangesFromDataFrame(ca_windows, keep.extra.columns = TRUE)
 
-cg_windows <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues.tsv",
+cg_windows <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/EMseq_cg_comunes_bvalues_cowindows.tsv",
                          delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 colnames(cg_windows)[4:10] <- c("age35_cg", "age43_cg", "age55_cg", "age67_cg", "age78_cg", "age85_cg", "age103_cg")
 cg_windows_gr <- makeGRangesFromDataFrame(cg_windows, keep.extra.columns = TRUE)
