@@ -14,12 +14,11 @@ suppressPackageStartupMessages({
 # ================================================================
 ensembl <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
 all_genes <- getBM(
-  attributes = c('ensembl_gene_id','chromosome_name','start_position','end_position'),
-  filters = 'biotype', 
-  values = "protein_coding", 
+  attributes = c('ensembl_gene_id','chromosome_name','start_position','end_position','gene_biotype'),
   mart = ensembl
 )
-
+standard_chrs <- c(as.character(1:22), "X", "Y", "MT")
+all_genes <- all_genes[all_genes$chromosome_name %in% standard_chrs, ]
 all_genes$chromosome_name <- paste0("chr", all_genes$chromosome_name)
 genes_gr <- makeGRangesFromDataFrame(
   all_genes,
@@ -34,61 +33,22 @@ all_gene_ids <- unique(genes_gr$ensembl_gene_id)
 annot_all <- gconvert(all_gene_ids, organism="hsapiens")
 
 # ================================================================
-# 2. OPTIMIZED ANNOTATION FUNCTION
-# ================================================================
-
-annotate_regions <- function(regions_df, genes_gr, mode = c("min", "max", "random")) {
-  mode <- match.arg(mode)
-  if(nrow(regions_df) == 0) return(data.frame())
-  
-  regions_gr <- makeGRangesFromDataFrame(regions_df, keep.extra.columns = TRUE)
-  hits <- findOverlaps(regions_gr, genes_gr)
-  if(length(hits) == 0) return(data.frame())
-  
-  
-  df <- data.frame(
-    ensembl_gene_id = genes_gr$ensembl_gene_id[subjectHits(hits)]
-  )
-  
-  # Behavior based on the selected mode
-  if (mode == "random") {
-    res <- df %>%
-      group_by(ensembl_gene_id) %>%
-      summarise(n_regions = n(), .groups = "drop")
-    return(as.data.frame(res))
-  } 
-  
-  df$diff <- regions_gr$diff[queryHits(hits)]
-  
-  res <- df %>%
-    group_by(ensembl_gene_id) %>%
-    summarise(
-      target_diff = if(mode == "min") min(diff) else max(diff),
-      n_regions = n(),
-      .groups = "drop"
-    ) %>%
-    arrange(if(mode == "min") target_diff else dplyr::desc(target_diff))
-  
-  return(as.data.frame(res))
-}
-
-# ================================================================
 # 3. LOAD SIGNIFICANT REGIONS & SUBSAMPLING
 # ================================================================
 # Load data
-com_pos <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_pos_close10k.txt", delim = "\t", show_col_types = FALSE)
-com_neg <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/Corr_age/genbody_COM_neg_close10k.txt", delim = "\t", show_col_types = FALSE)
+com_pos <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/genes/genes_COM_pos_aggregated.txt", delim = "\t", show_col_types = FALSE)
+com_neg <- read_delim("/home/epi-lab/Escritorio/Resultados/CHH/genes/genes_COM_neg_aggregated.txt", delim = "\t", show_col_types = FALSE)
 
 # Annotate and filter genes with >= 2 regions
-genes_pos <- annotate_regions(com_pos, genes_gr, mode = "max") %>% dplyr::filter(n_regions >= 2)
-genes_neg <- annotate_regions(com_neg, genes_gr, mode = "min") %>% dplyr::filter(n_regions >= 2)
+genes_pos <- com_pos %>% dplyr::filter(n_regions >= 2)
+genes_neg <- com_neg %>% dplyr::filter(n_regions >= 2)
 
-min_genes_count <- nrow(com_pos) 
+min_genes_count <- nrow(genes_pos) 
 
 # ================================================================
 # 4. MAP TO AGINGMAP
 # ================================================================
-aging_map <- read_delim("~/Escritorio/Database/Alzheimer_database.txt", delim="\t", trim_ws=TRUE, show_col_types = FALSE) #Select database for compare (https://sysomics.com/AgingMap/,https://epifactors.autosome.org, Kegg_AD )
+aging_map <- read_delim("~/Escritorio/Database/AgingMap_Humans.txt", delim="\t", trim_ws=TRUE, show_col_types = FALSE) #Select database for compare (https://sysomics.com/AgingMap/,https://epifactors.autosome.org, Kegg_AD )
 
 # Merge target genes with HGNC symbols
 annot_sig <- merge(genes_pos, annot_all, by.x="ensembl_gene_id", by.y="input")
@@ -99,49 +59,23 @@ observed_overlap <- nrow(sig_genes_in_aging)
 
 cat("Observed overlap with AgingMap:", observed_overlap, "\n")
 # ================================================================
-# 5. PERMUTATIONS
+# 5. PERMUTATIONS (direct random gene sampling)
 # ================================================================
 n_perm <- 1000
-set.seed(42)
+set.seed(455)
 overlap_counts <- numeric(n_perm)
 
-
-
-chrom_sizes <- read.table("/home/epi-lab/Escritorio/Database/hg38.chrom.sizes", header=FALSE)
-colnames(chrom_sizes) <- c("chr", "size")
-chrom_sizes <- chrom_sizes[grepl("^chr[0-9XY]+$", chrom_sizes$chr), ]
 pb <- txtProgressBar(min=0, max=n_perm, style=3)
 
 for(i in 1:n_perm){
-  # 1. Select random chromosomes weighted by their size
-  rand_chrs <- sample(chrom_sizes$chr, min_genes_count, replace=TRUE, 
-                      prob=chrom_sizes$size / sum(chrom_sizes$size))
+  # 1. Randomly sample the same number of genes from the full gene set
+  rand_ids <- sample(all_gene_ids, min_genes_count, replace = FALSE)
   
-  # 2. Select random start positions
-  rand_starts <- sapply(rand_chrs, function(chr) {
-    max_start <- chrom_sizes$size[chrom_sizes$chr == chr] - 100
-    sample(1:max_start, 1)
-  })
+  # 2. Get HGNC symbols for the sampled genes
+  annot_rand <- annot_all %>% dplyr::filter(input %in% rand_ids)
   
-  # 3. Create random GRanges object
-  rand_df <- data.frame(chr = rand_chrs, start = rand_starts, end = rand_starts + 100)
-  
-  # 4. Annotate random regions and filter by >= 2 regions
-  rand_genes <- annotate_regions(rand_df, genes_gr, mode = "random") %>% 
-    filter(n_regions >= 2)
-  
-  # 5. Cap to min_genes_count if exceeded; otherwise use all available genes
-  if(nrow(rand_genes) > min_genes_count){
-    rand_genes <- rand_genes %>% sample_n(min_genes_count)
-  }
-  
-  # 6. Count overlaps with AgingMap
-  if(nrow(rand_genes) > 0){
-    annot_rand <- merge(rand_genes, annot_all, by.x="ensembl_gene_id", by.y="input")
-    overlap_counts[i] <- nrow(merge(annot_rand, aging_map, by.x="name", by.y="Symbol"))
-  } else {
-    overlap_counts[i] <- 0
-  }
+  # 3. Count overlaps with AgingMap
+  overlap_counts[i] <- nrow(merge(annot_rand, aging_map, by.x="name", by.y="Symbol"))
   
   setTxtProgressBar(pb, i)
 }
@@ -156,3 +90,4 @@ enrichment <- observed_overlap / mean(overlap_counts)
 cat("\n--- RESULTS ---\n")
 cat("Empirical p-value:", empirical_p, "\n")
 cat("Enrichment factor:", round(enrichment, 2), "\n")
+
