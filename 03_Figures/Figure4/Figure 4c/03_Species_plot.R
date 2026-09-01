@@ -11,35 +11,37 @@ library(readr)
 library(scales)
 library(stringr)
 
+in_dir <- "/path/to/Fig4c/02_species_CoM_correlation/"
+
 # -------------------------
 # 1. Read data for each species and add species labels
 # -------------------------
 platypus_df <- read_delim(
-  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_ornitorrinco.txt",
+  paste0(in_dir,"cowindows_platypus.tsv"),
   delim = "\t"
 ) %>%
   mutate(species = "Platypus",  chr = as.character(chr))
 
 chicken_df <- read_delim(
-  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_pollo.txt",
+  paste0(in_dir,"cowindows_chicken.tsv"),
   delim = "\t"
 ) %>%
   mutate(species = "Chicken", chr = as.character(chr))
 
 frog_df <- read_delim(
-  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_rana.txt",
+  paste0(in_dir,"cowindows_frog.tsv"),
   delim = "\t"
 ) %>%
   mutate(species = "Frog", chr = as.character(chr))
 
 zebrafish_df <- read_delim(
-  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_zebrafish.txt",
+  paste0(in_dir,"cowindows_zebrafish.tsv"),
   delim = "\t"
 ) %>%
   mutate(species = "Zebrafish", chr = as.character(chr))
 
 shark_df <- read_delim(
-  "/home/epi-lab/Escritorio/Animals/CHH/animals/cowindows_tiburon.txt",
+  paste0(in_dir,"cowindows_shark.tsv"),
   delim = "\t"
 ) %>%
   mutate(species = "Elephant shark", chr = as.character(chr))
@@ -105,7 +107,7 @@ okabe_ito <- c(
 # 8. Plot species-specific trends in CA vs CG methylation
 # -------------------------
 ggplot(df_counts, aes(x = CG_bin_center, y = n_events_norm, color = species)) +
-  geom_smooth(method = "loess", se = FALSE, span = 0.7, size = 2) +
+  geom_smooth(method = "loess", se = FALSE, span = 0.7, linewidth = 2) +
   scale_x_continuous(
     breaks = seq(0, 100, 25),
     limits = c(0, 100)
