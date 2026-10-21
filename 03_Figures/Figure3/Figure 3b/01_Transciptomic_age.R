@@ -22,7 +22,7 @@ genes_neg <- read_delim("~/Escritorio/Resultados/CHH/genes/genes_COM_neg_aggrega
 # ================================================================
 # 2. LOAD & FORMAT RNA-SEQ / MICROARRAY DATASETS
 # ================================================================
-data <- fread("/home/epi-lab/Escritorio/RNA_GSE/3_datasets_updated.txt", header = TRUE)
+data <- fread("/home/epi-lab/Escritorio/RNA_GSE/3_RNA_datasets_updated.txt", header = TRUE)
 
 # Transpose matrix: set first column as names, then remove it
 controles <- t(data[, -1, with = FALSE])
